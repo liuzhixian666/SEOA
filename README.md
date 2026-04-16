@@ -6,9 +6,9 @@
 
 ## 概览
 
-代码量：5308行
+代码量：约15000行
 
-有效代码量：约3000行
+有效代码量：约8000行
 
 核心业务：为用户提供化学实验的智能评估服务。用户可以上传实验视频，系统会利用先进的大语言模型对视频内容进行分析和评估，生成详细的实验分析报告
 
@@ -40,9 +40,19 @@ CEEA/
 │   ├── database.py        # 数据库配置和连接
 │   ├── password_hash.py   # 密码哈希处理
 │   ├── auth.py            # 认证相关功能
+│   ├── classes.py         # 班级管理功能
+│   ├── conversations.py   # 对话管理功能
+│   ├── exams.py           # 考试系统功能
 │   ├── experiment_matcher.py  # 实验匹配器
-│   ├── experiments.json   # 实验评价表
-│   ├── update_database.py # 数据库更新脚本
+│   ├── import_evaluation_templates.py  # 导入评价模板
+│   ├── notifications.py   # 通知系统功能
+│   ├── similarity.py      # 相似度计算
+│   ├── templates.py       # 模板管理
+│   ├── test_ai_prompt.py  # AI提示测试
+│   ├── 人教版.txt         # 人教版实验数据
+│   ├── 人教版_格式化.txt   # 格式化的人教版实验数据
+│   ├── alembic/           # 数据库迁移工具
+│   ├── keyframes/         # 视频关键帧存储
 │   ├── videos/            # 视频文件存储目录
 │   ├── requirements.txt   # 依赖文件
 ├── Front_end/             # 前端应用目录
@@ -218,10 +228,16 @@ npm run dev
    CREATE DATABASE ceea CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
    ```
 5. **更新数据库结构**:
-   ```bash
-   cd Back_end
-   python update_database.py
-   ```
+   - 使用数据库迁移工具（推荐）:
+     ```bash
+     cd Back_end
+     alembic upgrade head
+     ```
+   - 或使用旧的更新脚本:
+     ```bash
+     cd Back_end
+     python update_database.py
+     ```
 
 ***
 
