@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User, Conversation, Message, EvaluationTemplate
+from models import User, Conversation, Message, EvaluationTemplate, TemplateStep, TemplateScorePoint
 from auth import get_current_user
 from datetime import datetime
 import logging
@@ -41,6 +41,49 @@ class CreateConversationRequest(BaseModel):
 # 发送消息请求模型
 class SendMessageRequest(BaseModel):
     content: str
+
+def complete_ai_result_with_template(ai_result_json, matched_template, db):
+    """
+    根据评价模板补全AI返回的简化JSON结果
+    AI只返回：status, score, deduction (对于失分点)
+    需要从模板补全：name, point_name, point, scoring_criteria等
+    """
+    try:
+        template_id = matched_template['experiment']['id']
+        template = db.query(EvaluationTemplate).filter(EvaluationTemplate.id == template_id).first()
+        
+        if not template:
+            logger.warning(f"未找到模板ID: {template_id}")
+            return ai_result_json
+        
+        # 按顺序获取模板中的步骤和评分点
+        db_steps = sorted(template.steps, key=lambda x: x.step_order)
+        
+        for i, ai_step in enumerate(ai_result_json.get('steps', [])):
+            if i < len(db_steps):
+                # 补全步骤名称
+                ai_step['name'] = db_steps[i].step_name
+                
+                # 获取该步骤的评分点
+                db_score_points = sorted(db_steps[i].score_points, key=lambda x: x.point_order)
+                
+                if 'score_points' in ai_step:
+                    for j, ai_point in enumerate(ai_step['score_points']):
+                        if j < len(db_score_points):
+                            # 补全评分点名称
+                            ai_point['point_name'] = db_score_points[j].point_name
+                            # 补全评分标准
+                            ai_point['point'] = db_score_points[j].scoring_criteria or db_score_points[j].deduction_description
+                            # 补全扣分描述（如果有扣分）
+                            if ai_point.get('deduction', 0) > 0:
+                                ai_point['error_explanation'] = db_score_points[j].deduction_description
+        
+        logger.info("成功补全AI返回结果")
+        return ai_result_json
+        
+    except Exception as e:
+        logger.error(f"补全AI结果时出错: {str(e)}")
+        return ai_result_json
 
 # 对话管理接口
 def register_router(app: FastAPI):
@@ -194,12 +237,12 @@ def register_router(app: FastAPI):
             db.add(user_message_db)
 
             # 5. 构造 AI 提示词 (Prompt)
-            # 关键修改：告诉 AI “用户已经说了这是什么实验，请基于此评估”
+            # 简化版JSON结构：只返回状态、得分、评价内容、扣分描述，不返回name、point_name等字段
             json_structure = """
             {
                 "summary": "一句话评价",
                 "steps": [
-                    {"name": "步骤名称", "status": "success", "comment": "评价内容", "score": 20, "total_score": 20, "score_points": [{"point_name": "小点名称", "point": "得分点描述", "status": "pass", "score": 5}, {"point_name": "小点名称", "point": "失分点描述", "status": "fail", "score": 0, "deduction": 5}]
+                    {"status": "success", "comment": "评价内容", "score": 20, "total_score": 20, "score_points": [{"status": "pass", "score": 5}, {"status": "fail", "score": 0, "deduction": 5}]}
                 ]
             }
             """
@@ -212,7 +255,6 @@ def register_router(app: FastAPI):
             matched_template = experiment_matcher.find_most_similar_experiment(experiment_name)
             if matched_template:
                 experiment_evaluation = f"\n参考评价模板：\n{matched_template['experiment']['content']}"
-                #context_hint += f"\n已找到相关评价模板，相似度：{matched_template['similarity']:.2f}"
 
             prompt_text = f"""
             你是一名严厉的化学实验考核老师。请根据用户提供的实验名称和参考评价模板，分析视频。
@@ -223,9 +265,9 @@ def register_router(app: FastAPI):
             1. 严格返回纯 JSON 格式。
             2. 请基于参考评价模板中的每一个评分点进行详细评估，对了打勾（pass），错了打叉（fail）。
             3. 对于每个步骤，详细列出评价模板中的所有评分点，得分点标记为"pass"，失分点标记为"fail"，并在"deduction"字段中注明扣分数值。
-            4. 确保每个评分点都有对应的评估结果、小点名称（point_name）、评分标准（point）、得分值（score）和扣分数值（如果是失分点）。
+            4. 每个评分点只需要返回状态（status）、得分（score）和扣分（deduction，如果失分），不需要返回名称等字段。
             5. 对于每个步骤，计算并返回该步骤的得分（score）和总分（total_score）。
-            6. 数据结构模板：
+            6. 数据结构模板（只需要按照顺序返回评估结果，不需要返回名称等字段）：
             {json_structure}
             """
 
@@ -258,38 +300,9 @@ def register_router(app: FastAPI):
                         import json
                         result_json = json.loads(ai_analysis_result)
                         
-                        # 自动补全JSON串，根据数据库中的评价表
+                        # 根据评价模板补全AI返回的简化JSON
                         if matched_template:
-                            # 从匹配的模板中获取完整的步骤和评分点信息
-                            db = SessionLocal()
-                            try:
-                                # 获取完整的模板信息，包括步骤和评分点
-                                template = db.query(EvaluationTemplate).filter(EvaluationTemplate.id == matched_template['experiment']['id']).first()
-                                if template:
-                                    # 按顺序获取步骤
-                                    db_steps = sorted(template.steps, key=lambda x: x.step_order)
-                                    
-                                    # 补全步骤信息
-                                    for i, db_step in enumerate(db_steps):
-                                        if i < len(result_json.get('steps', [])):
-                                            # 补全步骤名称
-                                            if 'name' not in result_json['steps'][i] or result_json['steps'][i]['name'] == '步骤名称':
-                                                result_json['steps'][i]['name'] = db_step.step_name
-                                            
-                                            # 补全评分点信息
-                                            if 'score_points' in result_json['steps'][i]:
-                                                # 按顺序获取评分点
-                                                db_score_points = sorted(db_step.score_points, key=lambda x: x.point_order)
-                                                for j, db_point in enumerate(db_score_points):
-                                                    if j < len(result_json['steps'][i]['score_points']):
-                                                        # 补全评分点名称
-                                                        if 'point_name' not in result_json['steps'][i]['score_points'][j] or result_json['steps'][i]['score_points'][j]['point_name'] == '小点名称':
-                                                            result_json['steps'][i]['score_points'][j]['point_name'] = db_point.point_name
-                                                        # 补全评分标准
-                                                        if 'point' not in result_json['steps'][i]['score_points'][j] or result_json['steps'][i]['score_points'][j]['point'] in ['得分点描述', '失分点描述']:
-                                                            result_json['steps'][i]['score_points'][j]['point'] = db_point.scoring_criteria or db_point.deduction_description
-                            finally:
-                                db.close()
+                            result_json = complete_ai_result_with_template(result_json, matched_template, db)
                         
                         # 计算步骤得分总和
                         steps_total = sum(step.get('score', 0) for step in result_json.get('steps', []))
@@ -298,7 +311,7 @@ def register_router(app: FastAPI):
                         ai_analysis_result = json.dumps(result_json, ensure_ascii=False)
                         logging.info(f"自动计算总分：{steps_total}")
                     except Exception as e:
-                        logging.error(f"计算总分时出错: {str(e)}")
+                        logging.error(f"处理AI结果时出错: {str(e)}")
 
                 else:
                     ai_analysis_result = '{"error": "API无响应"}'
