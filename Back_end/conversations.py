@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User, Conversation, Message
+from models import User, Conversation, Message, EvaluationTemplate
 from auth import get_current_user
 from datetime import datetime
 import logging
@@ -257,6 +257,40 @@ def register_router(app: FastAPI):
                     try:
                         import json
                         result_json = json.loads(ai_analysis_result)
+                        
+                        # 自动补全JSON串，根据数据库中的评价表
+                        if matched_template:
+                            # 从匹配的模板中获取完整的步骤和评分点信息
+                            db = SessionLocal()
+                            try:
+                                # 获取完整的模板信息，包括步骤和评分点
+                                template = db.query(EvaluationTemplate).filter(EvaluationTemplate.id == matched_template['experiment']['id']).first()
+                                if template:
+                                    # 按顺序获取步骤
+                                    db_steps = sorted(template.steps, key=lambda x: x.step_order)
+                                    
+                                    # 补全步骤信息
+                                    for i, db_step in enumerate(db_steps):
+                                        if i < len(result_json.get('steps', [])):
+                                            # 补全步骤名称
+                                            if 'name' not in result_json['steps'][i] or result_json['steps'][i]['name'] == '步骤名称':
+                                                result_json['steps'][i]['name'] = db_step.step_name
+                                            
+                                            # 补全评分点信息
+                                            if 'score_points' in result_json['steps'][i]:
+                                                # 按顺序获取评分点
+                                                db_score_points = sorted(db_step.score_points, key=lambda x: x.point_order)
+                                                for j, db_point in enumerate(db_score_points):
+                                                    if j < len(result_json['steps'][i]['score_points']):
+                                                        # 补全评分点名称
+                                                        if 'point_name' not in result_json['steps'][i]['score_points'][j] or result_json['steps'][i]['score_points'][j]['point_name'] == '小点名称':
+                                                            result_json['steps'][i]['score_points'][j]['point_name'] = db_point.point_name
+                                                        # 补全评分标准
+                                                        if 'point' not in result_json['steps'][i]['score_points'][j] or result_json['steps'][i]['score_points'][j]['point'] in ['得分点描述', '失分点描述']:
+                                                            result_json['steps'][i]['score_points'][j]['point'] = db_point.scoring_criteria or db_point.deduction_description
+                            finally:
+                                db.close()
+                        
                         # 计算步骤得分总和
                         steps_total = sum(step.get('score', 0) for step in result_json.get('steps', []))
                         # 总是设置正确的总分
