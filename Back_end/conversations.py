@@ -197,7 +197,6 @@ def register_router(app: FastAPI):
             # 关键修改：告诉 AI “用户已经说了这是什么实验，请基于此评估”
             json_structure = """
             {
-                "experiment_name": "实验名称",
                 "summary": "一句话评价",
                 "steps": [
                     {"name": "步骤名称", "status": "success", "comment": "评价内容", "score": 20, "total_score": 20, "score_points": [{"point_name": "小点名称", "point": "得分点描述", "status": "pass", "score": 5}, {"point_name": "小点名称", "point": "失分点描述", "status": "fail", "score": 0, "deduction": 5}]
@@ -207,13 +206,13 @@ def register_router(app: FastAPI):
             context_hint = ""
             experiment_evaluation = ""
             
-            context_hint = f"用户已明确该实验为：【{experiment_name}】。请直接基于该实验的标准操作流程进行评估，不需要再去猜测这是什么实验。"
+            context_hint = f"该实验为：{experiment_name}。请直接基于该实验的标准操作流程进行评估，不需要再去猜测这是什么实验。"
             
             # 匹配评价模板
             matched_template = experiment_matcher.find_most_similar_experiment(experiment_name)
             if matched_template:
                 experiment_evaluation = f"\n参考评价模板：\n{matched_template['experiment']['content']}"
-                context_hint += f"\n已找到相关评价模板，相似度：{matched_template['similarity']:.2f}"
+                #context_hint += f"\n已找到相关评价模板，相似度：{matched_template['similarity']:.2f}"
 
             prompt_text = f"""
             你是一名严厉的化学实验考核老师。请根据用户提供的实验名称和参考评价模板，分析视频。
@@ -222,12 +221,11 @@ def register_router(app: FastAPI):
 
             要求：
             1. 严格返回纯 JSON 格式。
-            2. JSON中的 "experiment_name" 字段请直接填入用户提供的实验名称。
-            3. 请基于参考评价模板中的每一个评分点进行详细评估，对了打勾（pass），错了打叉（fail）。
-            4. 对于每个步骤，详细列出评价模板中的所有评分点，得分点标记为"pass"，失分点标记为"fail"，并在"deduction"字段中注明扣分数值。
-            5. 确保每个评分点都有对应的评估结果、小点名称（point_name）、评分标准（point）、得分值（score）和扣分数值（如果是失分点）。
-            6. 对于每个步骤，计算并返回该步骤的得分（score）和总分（total_score）。
-            7. 数据结构模板：
+            2. 请基于参考评价模板中的每一个评分点进行详细评估，对了打勾（pass），错了打叉（fail）。
+            3. 对于每个步骤，详细列出评价模板中的所有评分点，得分点标记为"pass"，失分点标记为"fail"，并在"deduction"字段中注明扣分数值。
+            4. 确保每个评分点都有对应的评估结果、小点名称（point_name）、评分标准（point）、得分值（score）和扣分数值（如果是失分点）。
+            5. 对于每个步骤，计算并返回该步骤的得分（score）和总分（total_score）。
+            6. 数据结构模板：
             {json_structure}
             """
 
@@ -248,7 +246,7 @@ def register_router(app: FastAPI):
 
                 response = dashscope.MultiModalConversation.call(
                     api_key=AI_API_KEY,
-                    model='qwen3.6-plus',
+                    model='qwen3.6-flash',
                     messages=messages,
                 )
 

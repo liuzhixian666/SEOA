@@ -3,7 +3,7 @@ import axios from 'axios';
 // 创建axios实例
 const request = axios.create({
   baseURL: '/api/ceea/', // API基础路径
-  timeout: 300000 // 请求超时时间延长到5分钟（300000毫秒），用于处理AI视频分析等长时间任务
+  timeout: 600000 // 请求超时时间延长到5分钟（300000毫秒），用于处理AI视频分析等长时间任务
 });
 
 // 检查token是否过期

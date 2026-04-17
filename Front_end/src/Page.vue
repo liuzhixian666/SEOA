@@ -107,7 +107,7 @@
         <!-- 评估结果头部 -->
         <div v-else class="result-header">
            <div class="header-left">
-             <h1 class="result-title">{{ reportData.experiment_name || '化学实验分析报告' }}</h1>
+             <h1 class="result-title">{{ customExperimentName || '化学实验分析报告' }}</h1>
              <p class="result-meta"> · AI 智能评估完成 · {{ formatTime(reportData.create_time) }}</p>
            </div>
 
@@ -2584,6 +2584,9 @@ export default {
     },
     parseAIResponse(content) {
       try {
+        // 输出完整的AI返回文本到控制台
+        console.log('完整的AI返回文本:', content);
+        
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           this.reportData = JSON.parse(jsonMatch[0]);
