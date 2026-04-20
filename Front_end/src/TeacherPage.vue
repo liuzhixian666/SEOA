@@ -15,7 +15,7 @@
     <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }">
 
       <!-- 侧边栏Logo -->
-      <div class="sidebar-logo" v-if="!isSidebarCollapsed">
+      <div class="sidebar-logo">
         <div class="logo-icon">🧪</div>
         <h1 class="logo-text">CEEA 评估系统</h1>
       </div>
@@ -26,7 +26,7 @@
           <span v-if="isLoggedIn">User</span>
           <span v-else>未登录</span>
         </div>
-        <div class="user-info" v-if="!isSidebarCollapsed && isLoggedIn">
+        <div class="user-info" v-if="isLoggedIn">
           <span class="user-phone">{{ maskedPhone }}</span>
           <span class="user-role">教师账号</span>
         </div>
@@ -301,7 +301,7 @@
                   <div class="course-grid">
                     <div v-for="cls in filteredTeacherClasses" :key="cls.id" class="course-card" @click="enterClassDetail(cls.id)">
                       <div class="course-image">
-                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=education%20course%20thumbnail%20with%20chemical%20experiment%20theme&image_size=square" alt="课程图片" />
+                        <img :src="evaluate2" alt="课程图片" />
                       </div>
                       <div class="course-info">
                         <h4>{{ cls.class_name }}</h4>
@@ -324,7 +324,10 @@
             <!-- 班级详情页面（学生列表） -->
             <div v-else class="class-detail">
               <div class="class-detail-header">
-                <button class="btn-text" @click="backToClassList">← 返回班级列表</button>
+                <button class="btn-secondary" @click="backToClassList">
+                  <span>&larr;</span>
+                  <span>返回班级列表</span>
+                </button>
                 <h3>{{ selectedClass?.class_name }} - 学生列表</h3>
                 <div class="class-detail-actions">
                   <button class="btn-primary" @click="showAddStudentModal = true">添加学生</button>
@@ -392,7 +395,10 @@
               <!-- 模板详情页面 -->
               <div v-if="showTemplateDetail" class="template-detail-page">
                 <div class="detail-header">
-                  <button class="btn-secondary" @click="showTemplateDetail = false">&larr; 返回</button>
+                  <button class="btn-secondary" @click="showTemplateDetail = false">
+                    <span>&larr;</span>
+                    <span>返回</span>
+                  </button>
                   <h3>{{ selectedTemplate?.template_name }} {{ selectedTemplate?.is_default ? '(系统默认)' : '' }}</h3>
                 </div>
                 <div class="template-detail-content">
@@ -1776,17 +1782,26 @@ html, body {
 
 .sidebar {
   width: 260px; background-color: #fff; display: flex; flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 20;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease, width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 20;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02); border-right: none;
+  position: relative;
+  overflow: hidden;
+  transform-origin: left;
+  flex-shrink: 0;
 }
-.sidebar.collapsed { width: 0; overflow: hidden; opacity: 0; }
+.sidebar.collapsed {
+  transform: scaleX(0);
+  opacity: 0;
+  width: 0;
+}
 
 .sidebar-toggle-btn {
   position: absolute; top: 24px; left: 240px; width: 32px; height: 32px;
   background-color: #fff; border: 1px solid #E2E8F0; border-radius: 50%;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); z-index: 1000; color: #64748B;
-  transition: all 0.3s ease;
+  transition: left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
 }
 .sidebar-toggle-btn:hover { color: teal; transform: scale(1.1); box-shadow: 0 4px 12px rgba(0, 128, 128, 0.15); }
 .sidebar-toggle-btn.collapsed { left: 16px; }
@@ -1993,17 +2008,17 @@ html, body {
 .required { color: #EF4444; }
 .error-text { font-size: 12px; color: #EF4444; }
 .modern-input {
-  height: 44px; padding: 0 14px; border: 1px solid #E2E8F0; background: #F8FAFC;
+  width: 100%; height: 44px; padding: 0 14px; border: 1px solid #E2E8F0; background: #F8FAFC;
   border-radius: 10px; font-size: 14px; color: #334155; transition: all 0.2s;
 }
 .modern-input:focus { border-color: teal; background: white; outline: none; box-shadow: 0 0 0 4px rgba(0, 128, 128, 0.1); }
 .modern-textarea {
-  padding: 10px 14px; border: 1px solid #E2E8F0; background: #F8FAFC;
+  width: 100%; padding: 10px 14px; border: 1px solid #E2E8F0; background: #F8FAFC;
   border-radius: 10px; font-size: 14px; color: #334155; transition: all 0.2s;
   resize: vertical; min-height: 80px;
 }
 .modern-select {
-  height: 44px; padding: 0 14px; border: 1px solid #E2E8F0; background: #F8FAFC;
+  width: 100%; height: 44px; padding: 0 14px; border: 1px solid #E2E8F0; background: #F8FAFC;
   border-radius: 10px; font-size: 14px; color: #334155; transition: all 0.2s;
 }
 
@@ -2019,6 +2034,34 @@ html, body {
 .btn-text { background: none; border: none; color: #94A3B8; cursor: pointer; font-size: 13px; font-weight: 500; transition: color 0.2s; }
 .btn-text:hover { color: #475569; text-decoration: underline; }
 .btn-text.delete-btn { color: #EF4444; }
+.btn-secondary {
+  background: #1890FF;
+  border: 1px solid #1890FF;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #40A9FF;
+  border-color: #40A9FF;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(24, 144, 255, 0.3);
+}
+.btn-secondary:disabled {
+  background: #CBD5E1;
+  border-color: #CBD5E1;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
 
 .timeline-card { height: 100%; padding: 0; display: flex; flex-direction: column; }
 .timeline-header { padding: 24px 28px; border-bottom: 1px solid #F1F5F9; margin: 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
@@ -2253,9 +2296,24 @@ html, body {
 .logout-btn { padding: 10px 24px; background: #ff4d4f; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
 
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.modal-content { background: white; border-radius: 16px; padding: 30px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
+.modal-content { background: white; border-radius: 16px; padding: 30px; width: 90%; max-width: 500px; position: relative; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .modal-header h3 { margin: 0; font-size: 18px; font-weight: 600; color: #333; }
+.modal-body {
+  padding: 0 20px;
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 30px;
+  padding: 0 20px 20px;
+}
+.template-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
 .template-detail-page {
   padding: 20px 0;
 }
@@ -2338,6 +2396,16 @@ html, body {
 .score-points-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .score-points-header h5 { margin: 0; font-size: 14px; font-weight: 600; color: #333; }
 .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+.form-group {
+  margin-bottom: 20px;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
 .form-group.half { flex: 2; }
 .form-group.quarter { flex: 1; }
 .add-step-btn { margin-top: 10px; display: inline-block; }

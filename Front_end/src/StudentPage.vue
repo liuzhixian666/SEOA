@@ -15,7 +15,7 @@
     <aside class="sidebar" :class="{ 'collapsed': isSidebarCollapsed }">
 
       <!-- 侧边栏Logo -->
-      <div class="sidebar-logo" v-if="!isSidebarCollapsed">
+      <div class="sidebar-logo">
         <div class="logo-icon">🧪</div>
         <h1 class="logo-text">CEEA 评估系统</h1>
       </div>
@@ -26,7 +26,7 @@
           <span v-if="isLoggedIn">User</span>
           <span v-else>未登录</span>
         </div>
-        <div class="user-info" v-if="!isSidebarCollapsed && isLoggedIn">
+        <div class="user-info" v-if="isLoggedIn">
           <span class="user-phone">{{ maskedPhone }}</span>
           <span class="user-role">学生账号</span>
         </div>
@@ -272,10 +272,11 @@
           <div v-if="currentFunction === 'classes'" class="classes-page">
             <!-- 学生端：加入课程按钮和课程列表 -->
             <div>
+              <!-- 加入课程按钮 -->
               <div class="classes-header">
                 <h2>我学的课</h2>
                 <div class="header-actions">
-                  <button class="btn-primary" @click="showJoinCourseForm = true">
+                  <button class="btn-primary" @click="showJoinCourseModal = true">
                     + 加入课程
                   </button>
                   <div class="search-box">
@@ -290,21 +291,13 @@
                 </div>
               </div>
               
-              <!-- 加入课程表单 -->
-              <div v-if="showJoinCourseForm" class="join-course-form">
-                <div class="form-group">
-                  <input v-model="joinCourseCode" type="text" class="modern-input" placeholder="请输入课程码">
-                </div>
-                <button class="btn-primary" @click="joinCourse" :disabled="isLoading || !joinCourseCode.trim()">
-                  {{ isLoading ? '加入中...' : '加入课程' }}
-                </button>
-              </div>
+              <!-- 课程列表 -->
               <div class="classes-content">
                 <div v-if="studentClasses.length > 0" class="classes-list">
                   <div class="course-grid">
                     <div v-for="cls in studentClasses" :key="cls.id" class="course-card">
                       <div class="course-image">
-                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=education%20course%20thumbnail%20with%20chemical%20experiment%20theme&image_size=square" alt="课程图片" />
+                        <img :src="evaluate2" alt="课程图片" />
                       </div>
                       <div class="course-info">
                         <h4>{{ cls.class_name }}</h4>
@@ -499,6 +492,28 @@
       <LoginOrRegister @login-success="handleLoginSuccess" />
     </div>
     
+    <!-- 加入课程模态框 -->
+    <div v-if="showJoinCourseModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>加入课程</h3>
+          <button class="close-btn" @click="showJoinCourseModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>课程码 <span class="required">*</span></label>
+            <input v-model="joinCourseCode" type="text" class="modern-input" placeholder="请输入课程码">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-text" @click="showJoinCourseModal = false">取消</button>
+          <button class="btn-primary" @click="joinCourse" :disabled="isLoading || !joinCourseCode.trim()">
+            {{ isLoading ? '加入中...' : '加入课程' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    
   </div>
 </template>
 
@@ -543,6 +558,7 @@ export default {
       },
       joinCourseCode: '',
       showJoinCourseForm: false,
+      showJoinCourseModal: false,
       searchKeyword: '',
       studentClasses: [],
       studentExams: [],
@@ -742,6 +758,7 @@ export default {
         this.isLoading = true;
         await request.post('classes/join', { class_code: this.joinCourseCode });
         this.joinCourseCode = '';
+        this.showJoinCourseModal = false;
         await this.loadClassList();
       } catch (error) {
         console.error('加入课程失败:', error);
@@ -1073,17 +1090,26 @@ html, body {
 
 .sidebar {
   width: 260px; background-color: #fff; display: flex; flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 20;
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease, width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 20;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02); border-right: none;
+  position: relative;
+  overflow: hidden;
+  transform-origin: left;
+  flex-shrink: 0;
 }
-.sidebar.collapsed { width: 0; overflow: hidden; opacity: 0; }
+.sidebar.collapsed {
+  transform: scaleX(0);
+  opacity: 0;
+  width: 0;
+}
 
 .sidebar-toggle-btn {
   position: absolute; top: 24px; left: 240px; width: 32px; height: 32px;
   background-color: #fff; border: 1px solid #E2E8F0; border-radius: 50%;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); z-index: 1000; color: #64748B;
-  transition: all 0.3s ease;
+  transition: left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
 }
 .sidebar-toggle-btn:hover { color: teal; transform: scale(1.1); box-shadow: 0 4px 12px rgba(0, 128, 128, 0.15); }
 .sidebar-toggle-btn.collapsed { left: 16px; }
@@ -1569,6 +1595,29 @@ html, body {
   align-items: center; justify-content: center; z-index: 1000;
 }
 .modal-content { background: white; border-radius: 16px; padding: 30px; width: 90%; max-width: 400px; position: relative; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-header h3 { margin: 0; font-size: 18px; font-weight: 600; color: #333; }
+.modal-body {
+  padding: 0 20px;
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 30px;
+  padding: 0 20px 20px;
+}
+.form-group {
+  margin-bottom: 20px;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+.required { color: #EF4444; }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; border-radius: 3px; }
