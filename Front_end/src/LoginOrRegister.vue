@@ -267,7 +267,12 @@ export default {
           };
 
           setTimeout(() => {
-            this.$emit('login-success');
+            console.log('Login success, user_type:', response.user_type);
+            this.$emit('login-success', {
+              token: response.access_token,
+              userType: response.user_type,
+              phone: this.formData.phone
+            });
           }, 800);
 
         } else {

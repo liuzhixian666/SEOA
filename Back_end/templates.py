@@ -19,6 +19,7 @@ class CreateTemplateScorePointRequest(BaseModel):
     point_name: str
     point_order: int
     score: int
+    scoring_criteria: str = ""
     deduction_description: str
 
 # 评价表模板相关接口
@@ -88,6 +89,7 @@ def register_router(app: FastAPI):
                     "point_name": point.point_name,
                     "point_order": point.point_order,
                     "score": point.score,
+                    "scoring_criteria": point.scoring_criteria,
                     "deduction_description": point.deduction_description
                 })
             steps.append({
@@ -166,6 +168,7 @@ def register_router(app: FastAPI):
             point_name=request.point_name,
             point_order=request.point_order,
             score=request.score,
+            scoring_criteria=request.scoring_criteria,
             deduction_description=request.deduction_description
         )
         db.add(new_score_point)
@@ -177,6 +180,7 @@ def register_router(app: FastAPI):
             "point_name": new_score_point.point_name,
             "point_order": new_score_point.point_order,
             "score": new_score_point.score,
+            "scoring_criteria": new_score_point.scoring_criteria,
             "deduction_description": new_score_point.deduction_description,
             "created_at": new_score_point.created_at
         }

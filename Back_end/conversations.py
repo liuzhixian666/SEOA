@@ -47,6 +47,7 @@ def complete_ai_result_with_template(ai_result_json, matched_template, db):
     根据评价模板补全AI返回的简化JSON结果
     AI只返回：status, score, deduction (对于失分点)
     需要从模板补全：name, point_name, point, scoring_criteria等
+    确保所有步骤和评分点都完整存在
     """
     try:
         template_id = matched_template['experiment']['id']
@@ -59,30 +60,78 @@ def complete_ai_result_with_template(ai_result_json, matched_template, db):
         # 按顺序获取模板中的步骤和评分点
         db_steps = sorted(template.steps, key=lambda x: x.step_order)
         
-        for i, ai_step in enumerate(ai_result_json.get('steps', [])):
-            if i < len(db_steps):
-                # 补全步骤名称
-                ai_step['name'] = db_steps[i].step_name
-                
-                # 获取该步骤的评分点
-                db_score_points = sorted(db_steps[i].score_points, key=lambda x: x.point_order)
-                
-                if 'score_points' in ai_step:
-                    for j, ai_point in enumerate(ai_step['score_points']):
-                        if j < len(db_score_points):
-                            # 补全评分点名称
-                            ai_point['point_name'] = db_score_points[j].point_name
-                            # 补全评分标准
-                            ai_point['point'] = db_score_points[j].scoring_criteria or db_score_points[j].deduction_description
-                            # 补全扣分描述（如果有扣分）
-                            if ai_point.get('deduction', 0) > 0:
-                                ai_point['error_explanation'] = db_score_points[j].deduction_description
+        # 重建完整的步骤结构
+        complete_steps = []
+        ai_steps = ai_result_json.get('steps', [])
         
-        logger.info("成功补全AI返回结果")
+        for i, db_step in enumerate(db_steps):
+            # 计算步骤总分（从评分点分数总和）
+            db_score_points = sorted(db_step.score_points, key=lambda x: x.point_order)
+            step_total_score = sum(point.score for point in db_score_points)
+            
+            # 构建步骤基本信息
+            step_info = {
+                'name': db_step.step_name,
+                'status': 'success',  # 默认状态
+                'comment': '未评价',  # 默认评价
+                'score': 0,  # 默认得分
+                'total_score': step_total_score,  # 从评分点计算总分
+                'score_points': []
+            }
+            
+            # 从AI返回的结果中获取对应步骤的数据
+            if i < len(ai_steps):
+                ai_step = ai_steps[i]
+                step_info['status'] = ai_step.get('status', 'success')
+                step_info['comment'] = ai_step.get('comment', '未评价')
+                
+                ai_score_points = ai_step.get('score_points', [])
+                
+                # 重建完整的评分点结构
+                for j, db_point in enumerate(db_score_points):
+                    point_info = {
+                        'point_name': db_point.point_name,
+                        'point': db_point.scoring_criteria or db_point.deduction_description,
+                        'status': 'pass',  # 默认状态
+                        'score': db_point.score,  # 从模板获取分值
+                        'deduction': 0  # 默认扣分
+                    }
+                    
+                    # 从AI返回的结果中获取对应评分点的数据
+                    if j < len(ai_score_points):
+                        ai_point = ai_score_points[j]
+                        point_info['status'] = ai_point.get('status', 'pass')
+                        # 确保得分不超过评分点的满分
+                        point_score = ai_point.get('score', db_point.score)
+                        point_info['score'] = min(point_score, db_point.score)
+                        # 计算扣分值
+                        point_info['deduction'] = db_point.score - point_info['score']
+                        # 补全扣分描述（如果有扣分）
+                        if point_info['deduction'] > 0:
+                            point_info['error_explanation'] = db_point.deduction_description
+                    
+                    step_info['score_points'].append(point_info)
+                
+                # 重新计算步骤得分（从评分点得分总和）
+                step_info['score'] = sum(point.get('score', 0) for point in step_info['score_points'])
+                # 确保步骤得分不超过步骤总分
+                step_info['score'] = min(step_info['score'], step_total_score)
+            
+            complete_steps.append(step_info)
+        
+        # 更新AI返回的结果
+        ai_result_json['steps'] = complete_steps
+        
+        # 重新计算总分
+        steps_total = sum(step.get('score', 0) for step in complete_steps)
+        ai_result_json['total_score'] = steps_total
+        
+        logger.info(f"成功补全AI返回结果，步骤数: {len(complete_steps)}, 总分: {steps_total}")
         return ai_result_json
         
     except Exception as e:
         logger.error(f"补全AI结果时出错: {str(e)}")
+        # 如果补全失败，返回原始AI结果
         return ai_result_json
 
 # 对话管理接口
@@ -254,7 +303,8 @@ def register_router(app: FastAPI):
             # 匹配评价模板
             matched_template = experiment_matcher.find_most_similar_experiment(experiment_name)
             if matched_template:
-                experiment_evaluation = f"\n参考评价模板：\n{matched_template['experiment']['content']}"
+                template_content = matched_template['experiment']['content']
+                experiment_evaluation = f"\n参考评价模板：\n{template_content}"
 
             prompt_text = f"""
             你是一名严厉的化学实验考核老师。请根据用户提供的实验名称和参考评价模板，分析视频。
@@ -263,11 +313,13 @@ def register_router(app: FastAPI):
 
             要求：
             1. 严格返回纯 JSON 格式。
-            2. 请基于参考评价模板中的每一个评分点进行详细评估，对了打勾（pass），错了打叉（fail）。
-            3. 对于每个步骤，详细列出评价模板中的所有评分点，得分点标记为"pass"，失分点标记为"fail"，并在"deduction"字段中注明扣分数值。
-            4. 每个评分点只需要返回状态（status）、得分（score）和扣分（deduction，如果失分），不需要返回名称等字段。
-            5. 对于每个步骤，计算并返回该步骤的得分（score）和总分（total_score）。
-            6. 数据结构模板（只需要按照顺序返回评估结果，不需要返回名称等字段）：
+            2. 在总体评价中指出失误的地方。
+            3. 请基于参考评价模板中的每一个步骤评分点进行详细评估，对了打勾（pass），错了打叉（fail）。
+            4. 必须评价所有步骤，详细列出评价模板中的所有评分点，得分点标记为"pass"，失分点标记为"fail"，并在"deduction"字段中注明扣分数值，简要填写comment字段。
+            5. 每个评分点都要打分，只需要返回状态（status）、得分（score）和扣分（deduction，如果失分）。
+            6. 对于每个步骤，计算并返回该步骤的得分（score）和总分（total_score）。
+            7. **确保返回与评价模板中完全相同数量的步骤**，不要遗漏任何步骤。
+            8. 数据结构模板：
             {json_structure}
             """
 
@@ -288,13 +340,15 @@ def register_router(app: FastAPI):
 
                 response = dashscope.MultiModalConversation.call(
                     api_key=AI_API_KEY,
-                    model='qwen3.6-flash',
+                    model='qwen3.6-flash-2026-04-16',
                     messages=messages,
                 )
 
                 if hasattr(response, 'output') and response.output:
                     raw_content = response.output.choices[0].message.content[0]["text"]
                     ai_analysis_result = raw_content.replace("```json", "").replace("```", "").strip()
+                    
+                    print(f"\n========== AI返回内容 ==========\n{ai_analysis_result}\n========== AI返回内容结束 ==========\n")
                     
                     try:
                         import json
