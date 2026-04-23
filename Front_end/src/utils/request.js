@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // 创建axios实例
 const request = axios.create({
-  baseURL: '/api/ceea/', // API基础路径
-  timeout: 600000 // 请求超时时间延长到5分钟（300000毫秒），用于处理AI视频分析等长时间任务
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/ceea/',
+  timeout: 600000
 });
 
 // 检查token是否过期
@@ -53,9 +53,7 @@ request.interceptors.request.use(
         localStorage.clear();
         // 显示登录过期提示
         alert('登录过期，请重新登录！');
-        // 直接跳转到登录页面
-        window.location.href = '/ceea/';
-        // 阻止请求继续执行
+        window.location.reload();
         return Promise.reject(new Error('Token expired'));
       }
       // 从localStorage获取token
@@ -98,9 +96,7 @@ request.interceptors.response.use(
       localStorage.clear();
       // 显示登录过期提示
       alert('登录过期，请重新登录！');
-      // 直接跳转到登录页面
-      window.location.href = '/ceea/';
-      // 阻止错误继续传播
+      window.location.reload();
       return Promise.resolve();
     }
     

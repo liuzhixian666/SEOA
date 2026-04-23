@@ -1,15 +1,23 @@
 {
   "name": "chemistry-experiment-evaluation",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "main": "dist-electron/main.js",
+  "author": "CEEA Team",
+  "description": "化学实验评价系统 - 一个基于现代Web技术开发的实验教学辅助平台",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "vite",
+    "electron:build": "vite build && electron-builder",
+    "electron:build:win": "vite build && electron-builder --win",
+    "electron:build:mac": "vite build && electron-builder --mac",
+    "electron:build:linux": "vite build && electron-builder --linux",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "axios": "^1.13.2",
@@ -18,7 +26,64 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.2",
+    "electron": "^41.2.2",
+    "electron-builder": "^26.8.1",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5",
     "vite": "^7.2.4",
+    "vite-plugin-electron": "^0.29.1",
+    "vite-plugin-electron-renderer": "^0.14.6",
     "vite-plugin-vue-devtools": "^8.0.5"
+  },
+  "build": {
+    "appId": "com.ceea.chemistry-experiment-evaluation",
+    "productName": "CEEA",
+    "copyright": "Copyright © 2024 CEEA Team",
+    "directories": {
+      "output": "../../app",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/evaluate.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "build/evaluate.ico",
+      "uninstallerIcon": "build/evaluate.ico",
+      "installerHeaderIcon": "build/evaluate.ico",
+      "deleteAppDataOnUninstall": true,
+      "uninstallDisplayName": "CEEA 化学实验评价系统",
+      "language": "2052",
+      "runAfterFinish": true,
+      "allowElevation": true,
+      "shortcutName": "CEEA 化学实验评价系统",
+      "include": "build/installer.nsh"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
   }
 }
