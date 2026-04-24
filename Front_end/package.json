@@ -1,10 +1,10 @@
 {
-  "name": "chemistry-experiment-evaluation",
+  "name": "seoa",
   "version": "1.0.0",
   "private": true,
   "main": "dist-electron/main.js",
-  "author": "CEEA Team",
-  "description": "化学实验评价系统 - 一个基于现代Web技术开发的实验教学辅助平台",
+  "author": "SEOA Team",
+  "description": "学科实验操作分析平台 - 一个基于现代Web技术开发的实验教学辅助平台",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.2",
-    "electron": "^41.2.2",
+    "electron": "^33.4.11",
     "electron-builder": "^26.8.1",
     "png-to-ico": "^3.0.1",
     "sharp": "^0.34.5",
@@ -36,11 +36,11 @@
     "vite-plugin-vue-devtools": "^8.0.5"
   },
   "build": {
-    "appId": "com.ceea.chemistry-experiment-evaluation",
-    "productName": "CEEA",
-    "copyright": "Copyright © 2024 CEEA Team",
+    "appId": "com.seoa.subject-experiment-operation-analysis",
+    "productName": "SEOA",
+    "copyright": "Copyright © 2024 SEOA Team",
     "directories": {
-      "output": "../../app",
+      "output": "../../APP",
       "buildResources": "build"
     },
     "files": [
@@ -68,11 +68,11 @@
       "uninstallerIcon": "build/evaluate.ico",
       "installerHeaderIcon": "build/evaluate.ico",
       "deleteAppDataOnUninstall": true,
-      "uninstallDisplayName": "CEEA 化学实验评价系统",
+      "uninstallDisplayName": "SEOA 学科实验操作分析系统",
       "language": "2052",
       "runAfterFinish": true,
       "allowElevation": true,
-      "shortcutName": "CEEA 化学实验评价系统",
+      "shortcutName": "SEOA 学科实验操作分析系统",
       "include": "build/installer.nsh"
     },
     "mac": {

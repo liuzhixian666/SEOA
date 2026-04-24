@@ -58,7 +58,7 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
-      '/api/ceea': {
+      '/api/seoa': {
         target: 'http://localhost:8001',
         changeOrigin: true
       }

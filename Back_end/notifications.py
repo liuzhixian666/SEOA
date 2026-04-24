@@ -10,7 +10,7 @@ from auth import get_current_user
 # 通知系统接口
 def register_router(app: FastAPI):
     # 获取当前用户的通知列表（支持分页）
-    @app.get("/api/ceea/notifications")
+    @app.get("/api/seoa/notifications")
     def get_notifications(
         page: int = 1,
         page_size: int = 20,
@@ -62,7 +62,7 @@ def register_router(app: FastAPI):
             raise HTTPException(status_code=500, detail=f"获取通知列表失败: {str(e)}")
 
     # 获取未读通知数量
-    @app.get("/api/ceea/notifications/unread-count")
+    @app.get("/api/seoa/notifications/unread-count")
     def get_unread_count(
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
@@ -82,7 +82,7 @@ def register_router(app: FastAPI):
             raise HTTPException(status_code=500, detail=f"获取未读数量失败: {str(e)}")
 
     # 标记单条通知为已读
-    @app.put("/api/ceea/notifications/{notification_id}/read")
+    @app.put("/api/seoa/notifications/{notification_id}/read")
     def mark_as_read(
         notification_id: int,
         current_user: User = Depends(get_current_user),
@@ -116,7 +116,7 @@ def register_router(app: FastAPI):
             raise HTTPException(status_code=500, detail=f"标记已读失败: {str(e)}")
 
     # 全部标记为已读
-    @app.put("/api/ceea/notifications/read-all")
+    @app.put("/api/seoa/notifications/read-all")
     def mark_all_as_read(
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)

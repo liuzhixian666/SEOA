@@ -27,7 +27,7 @@ def generate_class_code(length=8):
 # 班级管理接口
 def register_router(app: FastAPI):
     # 创建班级（教师）
-    @app.post("/api/ceea/classes")
+    @app.post("/api/seoa/classes")
     def create_class(request: CreateClassRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":
@@ -58,7 +58,7 @@ def register_router(app: FastAPI):
         }
 
     # 获取教师的班级列表
-    @app.get("/api/ceea/classes")
+    @app.get("/api/seoa/classes")
     def get_teacher_classes(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":
@@ -75,7 +75,7 @@ def register_router(app: FastAPI):
         } for cls in classes]
 
     # 加入班级（学生）
-    @app.post("/api/ceea/classes/join")
+    @app.post("/api/seoa/classes/join")
     def join_class(request: JoinClassRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为学生
         if current_user.user_type != "student":
@@ -109,7 +109,7 @@ def register_router(app: FastAPI):
         }
 
     # 获取学生的班级列表
-    @app.get("/api/ceea/student/classes")
+    @app.get("/api/seoa/student/classes")
     def get_student_classes(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为学生
         if current_user.user_type != "student":
@@ -131,7 +131,7 @@ def register_router(app: FastAPI):
         return classes
 
     # 获取班级详情
-    @app.get("/api/ceea/classes/{class_id}")
+    @app.get("/api/seoa/classes/{class_id}")
     def get_class_detail(class_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 查找班级
         class_ = db.query(Class).filter(Class.id == class_id).first()
@@ -173,7 +173,7 @@ def register_router(app: FastAPI):
         }
 
     # 教师添加学生到班级
-    @app.post("/api/ceea/classes/{class_id}/students")
+    @app.post("/api/seoa/classes/{class_id}/students")
     def add_student_to_class(class_id: int, request: AddStudentRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         if current_user.user_type != "teacher":
             raise HTTPException(status_code=403, detail="只有教师可以添加学生")
@@ -214,7 +214,7 @@ def register_router(app: FastAPI):
         }
 
     # 教师从班级中移除学生
-    @app.delete("/api/ceea/classes/{class_id}/students/{student_id}")
+    @app.delete("/api/seoa/classes/{class_id}/students/{student_id}")
     def remove_student_from_class(class_id: int, student_id: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         if current_user.user_type != "teacher":
             raise HTTPException(status_code=403, detail="只有教师可以移除学生")
@@ -248,7 +248,7 @@ def register_router(app: FastAPI):
         }
 
     # 解散班级（教师）
-    @app.delete("/api/ceea/classes/{class_id}")
+    @app.delete("/api/seoa/classes/{class_id}")
     def delete_class(class_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 查找班级
         class_ = db.query(Class).filter(Class.id == class_id).first()

@@ -104,7 +104,7 @@ function createWindow() {
   })
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5174/ceea/')
+    mainWindow.loadURL('http://localhost:5174/seoa/')
     mainWindow.webContents.openDevTools()
   } else {
     const indexPath = path.join(__dirname, '../dist/index.html')

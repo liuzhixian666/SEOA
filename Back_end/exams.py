@@ -27,7 +27,7 @@ class UpdateExamRequest(BaseModel):
 # 考试系统接口
 def register_router(app: FastAPI):
     # 创建考试（教师）
-    @app.post("/api/ceea/exams")
+    @app.post("/api/seoa/exams")
     def create_exam(request: CreateExamRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         try:
             # 检查是否为教师
@@ -135,7 +135,7 @@ def register_router(app: FastAPI):
             raise HTTPException(status_code=500, detail=f"创建考试失败: {str(e)}")
 
     # 获取教师的考试列表
-    @app.get("/api/ceea/exams")
+    @app.get("/api/seoa/exams")
     def get_teacher_exams(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":
@@ -166,7 +166,7 @@ def register_router(app: FastAPI):
 
 
     # 删除考试
-    @app.delete("/api/ceea/exams/{exam_id}")
+    @app.delete("/api/seoa/exams/{exam_id}")
     def delete_exam(exam_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 查找考试
         exam = db.query(Exam).filter(Exam.id == exam_id).first()
@@ -184,7 +184,7 @@ def register_router(app: FastAPI):
         return {"message": "考试已成功删除"}
     
     # 更新考试（教师）
-    @app.put("/api/ceea/exams/{exam_id}")
+    @app.put("/api/seoa/exams/{exam_id}")
     def update_exam(exam_id: int, request: UpdateExamRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":
@@ -257,7 +257,7 @@ def register_router(app: FastAPI):
         }
     
     # 获取学生可参加的考试列表
-    @app.get("/api/ceea/student/exams")
+    @app.get("/api/seoa/student/exams")
     def get_student_exams(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为学生
         if current_user.user_type != "student":
@@ -295,7 +295,7 @@ def register_router(app: FastAPI):
         return exam_list
     
     # 修改考试详情接口，允许学生查看
-    @app.get("/api/ceea/exams/{exam_id}")
+    @app.get("/api/seoa/exams/{exam_id}")
     def get_exam_detail(exam_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 查找考试
         exam = db.query(Exam).filter(Exam.id == exam_id).first()

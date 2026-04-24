@@ -25,7 +25,7 @@ class CreateTemplateScorePointRequest(BaseModel):
 # 评价表模板相关接口
 def register_router(app: FastAPI):
     # 获取评价表模板列表
-    @app.get("/api/ceea/templates")
+    @app.get("/api/seoa/templates")
     def get_templates(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":
@@ -43,7 +43,7 @@ def register_router(app: FastAPI):
         } for template in templates]
 
     # 创建评价表模板
-    @app.post("/api/ceea/templates")
+    @app.post("/api/seoa/templates")
     def create_template(request: CreateTemplateRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":
@@ -68,7 +68,7 @@ def register_router(app: FastAPI):
         }
 
     # 获取评价表模板详情
-    @app.get("/api/ceea/templates/{template_id}")
+    @app.get("/api/seoa/templates/{template_id}")
     def get_template_detail(template_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":
@@ -109,7 +109,7 @@ def register_router(app: FastAPI):
         }
 
     # 添加模板步骤
-    @app.post("/api/ceea/templates/{template_id}/steps")
+    @app.post("/api/seoa/templates/{template_id}/steps")
     def add_template_step(template_id: int, request: CreateTemplateStepRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":
@@ -142,7 +142,7 @@ def register_router(app: FastAPI):
         }
 
     # 添加模板步骤的评分点
-    @app.post("/api/ceea/templates/steps/{step_id}/score-points")
+    @app.post("/api/seoa/templates/steps/{step_id}/score-points")
     def add_template_score_point(step_id: int, request: CreateTemplateScorePointRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":
@@ -186,7 +186,7 @@ def register_router(app: FastAPI):
         }
 
     # 删除评价表模板
-    @app.delete("/api/ceea/templates/{template_id}")
+    @app.delete("/api/seoa/templates/{template_id}")
     def delete_template(template_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 检查是否为教师
         if current_user.user_type != "teacher":

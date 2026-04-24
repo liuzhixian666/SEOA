@@ -15,7 +15,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30分钟过期
 
 # OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/ceea/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/seoa/login")
 
 # 登录请求模型
 class LoginRequest(BaseModel):
@@ -96,7 +96,7 @@ def generate_unique_user_id(db: Session) -> str:
 
 # 注册接口
 def register_router(app: FastAPI):
-    @app.post("/api/ceea/register")
+    @app.post("/api/seoa/register")
     def register(request: RegisterRequest, db: Session = Depends(get_db)):
         user_phone = request.user_phone
         password = request.password
@@ -132,7 +132,7 @@ def register_router(app: FastAPI):
             "name": new_user.name
         }
 
-    @app.post("/api/ceea/login")
+    @app.post("/api/seoa/login")
     def login(request: LoginRequest, db: Session = Depends(get_db)):
         user_phone = request.username
         password = request.password
@@ -154,7 +154,7 @@ def register_router(app: FastAPI):
             "user_type": user.user_type
         }
 
-    @app.get("/api/ceea/users/me")
+    @app.get("/api/seoa/users/me")
     def get_me(current_user: User = Depends(get_current_user)):
         return {
             "user_id": current_user.user_id,

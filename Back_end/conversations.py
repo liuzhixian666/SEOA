@@ -137,7 +137,7 @@ def complete_ai_result_with_template(ai_result_json, matched_template, db):
 # 对话管理接口
 def register_router(app: FastAPI):
     # 获取用户的对话列表
-    @app.get("/api/ceea/conversations")
+    @app.get("/api/seoa/conversations")
     def get_conversations(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 获取当前用户的所有同时包含用户消息和AI回复的对话
         user_conversations = []
@@ -161,7 +161,7 @@ def register_router(app: FastAPI):
         return user_conversations
 
     # 获取对话详情
-    @app.get("/api/ceea/conversations/{id}")
+    @app.get("/api/seoa/conversations/{id}")
     def get_conversation(id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 获取指定对话的详情
         conversation = db.query(Conversation).filter(Conversation.id == id).first()
@@ -208,7 +208,7 @@ def register_router(app: FastAPI):
         }
 
     # 创建新对话
-    @app.post("/api/ceea/conversations")
+    @app.post("/api/seoa/conversations")
     def create_conversation(request: CreateConversationRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
         # 创建新对话
         from datetime import datetime
@@ -240,7 +240,7 @@ def register_router(app: FastAPI):
         }
 
     #处理视频类请求
-    @app.post("/api/ceea/conversations/{id}/video")
+    @app.post("/api/seoa/conversations/{id}/video")
     async def upload_video(
             id: int,
             video: UploadFile = File(...),

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 创建axios实例
 const request = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/ceea/',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/seoa/',
   timeout: 600000
 });
 

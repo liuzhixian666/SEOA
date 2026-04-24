@@ -17,7 +17,7 @@
       <!-- 侧边栏Logo -->
       <div class="sidebar-logo">
         <div class="logo-icon">🧪</div>
-        <h1 class="logo-text">CEEA 评估系统</h1>
+        <h1 class="logo-text">SEOA 评估系统</h1>
       </div>
 
       <!-- 用户信息区域 -->
